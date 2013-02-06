@@ -142,6 +142,11 @@
       <artifactId>maven-scm-provider-perforce</artifactId>
       <version>${version.maven-scm}</version>
     </dependency>
+    <dependency>
+      <groupId>com.perforce</groupId>
+      <artifactId>p4maven</artifactId>
+      <version>[2011,2012)</version>
+    </dependency>
 
     <!-- TFS -->
     <dependency>

@@ -20,6 +20,7 @@
 
 package org.sonar.plugins.scmactivity;
 
+import com.perforce.maven.scm.provider.p4.P4ScmProvider;
 import org.apache.maven.scm.provider.ScmProvider;
 import org.apache.maven.scm.provider.accurev.AccuRevScmProvider;
 import org.apache.maven.scm.provider.bazaar.BazaarScmProvider;
@@ -42,6 +43,7 @@ public enum SupportedScm {
   CLEAR_CASE(new ClearCaseScmProvider(), null),
   ACCU_REV(new AccuRevScmProvider(), null),
   PERFORCE(new PerforceScmProvider(), null),
+  P4(new P4ScmProvider(), null),
   TFS(new TfsScmProvider(), null),
   JAZZ(new JazzScmProvider(), null),
   INTEGRITY(new IntegrityScmProvider(), null);
