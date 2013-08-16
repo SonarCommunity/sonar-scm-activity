@@ -72,7 +72,7 @@
   </ciManagement>
 
   <properties>
-    <version.maven-scm>1.8</version.maven-scm>
+    <version.maven-scm>1.9-SNAPSHOT</version.maven-scm>
     <sonar.buildVersion>3.0</sonar.buildVersion>
     <sonar.pluginName>SCM Activity</sonar.pluginName>
     <sonar.pluginClass>org.sonar.plugins.scmactivity.ScmActivityPlugin</sonar.pluginClass>
@@ -255,7 +255,7 @@
             <configuration>
               <rules>
                 <requireFilesSize>
-                  <maxsize>2000000</maxsize>
+                  <maxsize>3000000</maxsize>
                   <minsize>1700000</minsize>
                   <files>
                     <file>${project.build.directory}/${project.build.finalName}.jar</file>

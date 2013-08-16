@@ -29,6 +29,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.ScmFileSet;
 import org.apache.maven.scm.command.blame.BlameScmResult;
+import org.apache.maven.scm.command.blame.BlameScmRequest;
 import org.apache.maven.scm.provider.ScmProviderRepository;
 import org.apache.maven.scm.provider.svn.util.SvnUtil;
 import org.apache.maven.scm.repository.ScmRepository;
@@ -50,7 +51,10 @@ public class ScmFacade implements BatchExtension {
   }
 
   public BlameScmResult blame(File file) throws ScmException {
-    return scmManager.blame(getScmRepository(), new ScmFileSet(file.getParentFile()), file.getName());
+    BlameScmRequest blameRequest = new BlameScmRequest(getScmRepository(), new ScmFileSet(file.getParentFile()));
+    blameRequest.setFilename(file.getName());
+    blameRequest.setIgnoreWhitespace(true);   
+    return scmManager.blame(blameRequest);
   }
 
   @VisibleForTesting

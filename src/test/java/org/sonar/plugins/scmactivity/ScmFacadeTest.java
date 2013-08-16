@@ -34,9 +34,11 @@ import org.junit.Test;
 import org.sonar.api.utils.SonarException;
 
 import java.io.File;
+import org.apache.maven.scm.command.blame.BlameScmRequest;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.refEq;
 import static org.mockito.Mockito.mock;
@@ -133,8 +135,7 @@ public class ScmFacadeTest {
   public void should_blame_file() throws ScmException {
     when(conf.getUrl()).thenReturn("/url");
     when(manager.makeScmRepository("/url")).thenReturn(repository);
-    when(manager.blame(eq(repository), refEq(new ScmFileSet(new File("src"))), eq("source.java"))).thenReturn(blameScmResult);
-
+    when(manager.blame(any(BlameScmRequest.class))).thenReturn(blameScmResult);
     BlameScmResult result = scmFacade.blame(new File("src/source.java"));
 
     assertThat(result).isSameAs(blameScmResult);
