@@ -60,14 +60,15 @@ public class Blame implements BatchExtension {
 
     int lineNumber = 1;
     for (BlameLine line : result.getLines()) {
-      authors.add(lineNumber, normalizeString(line.getAuthor()));
+      final String author = line.getAuthor() == null ? "" : line.getAuthor();
+      authors.add(lineNumber, normalizeString(author));
       dates.add(lineNumber, DateUtils.formatDateTime(line.getDate()));
       revisions.add(lineNumber, line.getRevision());
 
       lineNumber++;
       // SONARPLUGINS-3097 For some SCM blame is missing on last empty line
       if (lineNumber > result.getLines().size() && lineNumber == lineCount) {
-        authors.add(lineNumber, normalizeString(line.getAuthor()));
+        authors.add(lineNumber, normalizeString(author));
         dates.add(lineNumber, DateUtils.formatDateTime(line.getDate()));
         revisions.add(lineNumber, line.getRevision());
       }
