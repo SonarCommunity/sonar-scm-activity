@@ -11,7 +11,7 @@
   <groupId>org.codehaus.sonar-plugins.scm-activity</groupId>
   <artifactId>sonar-scm-activity-plugin</artifactId>
   <packaging>sonar-plugin</packaging>
-  <version>1.6.1</version>
+  <version>1.7-SNAPSHOT</version>
 
   <name>Sonar SCM Activity Plugin</name>
   <description>Collects and reports information from SCM.</description>
