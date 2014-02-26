@@ -26,12 +26,12 @@ import org.apache.maven.scm.provider.bazaar.BazaarScmProvider;
 import org.apache.maven.scm.provider.clearcase.ClearCaseScmProvider;
 import org.apache.maven.scm.provider.cvslib.cvsexe.CvsExeScmProvider;
 import org.apache.maven.scm.provider.hg.HgScmProvider;
-import org.apache.maven.scm.provider.integrity.IntegrityScmProvider;
 import org.apache.maven.scm.provider.jazz.JazzScmProvider;
 import org.apache.maven.scm.provider.perforce.PerforceScmProvider;
 import org.apache.maven.scm.provider.svn.svnexe.SvnExeScmProvider;
 import org.apache.maven.scm.provider.tfs.TfsScmProvider;
 import org.sonar.plugins.scmactivity.maven.SonarGitExeScmProvider;
+import org.sonar.plugins.scmactivity.maven.integrity.SonarIntegrityScmProvider;
 
 public enum SupportedScm {
   SVN(new SvnExeScmProvider(), "scm:svn:svn://"),
@@ -44,7 +44,8 @@ public enum SupportedScm {
   PERFORCE(new PerforceScmProvider(), null),
   TFS(new TfsScmProvider(), null),
   JAZZ(new JazzScmProvider(), null),
-  INTEGRITY(new IntegrityScmProvider(), null);
+  // TODO: hack - to be submitted as an update in maven-scm-provider-integrity for a future release.
+  INTEGRITY(new SonarIntegrityScmProvider(), null);
 
   private final ScmProvider provider;
   private final String guessedUrl;
