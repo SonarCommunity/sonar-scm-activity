@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,11 +17,9 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -30,11 +28,14 @@ import org.sonar.api.batch.DependedUpon;
 import org.sonar.api.batch.Sensor;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.batch.TimeMachine;
+import org.sonar.api.batch.TimeMachineQuery;
+import org.sonar.api.batch.fs.FileSystem;
+import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.measures.CoreMetrics;
+import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.Metric;
-import org.sonar.api.resources.InputFile;
+import org.sonar.api.resources.File;
 import org.sonar.api.resources.Project;
-import org.sonar.api.resources.ProjectFileSystem;
 import org.sonar.api.resources.Resource;
 import org.sonar.api.utils.TimeProfiler;
 
@@ -51,34 +52,31 @@ public final class ScmActivitySensor implements Sensor {
   private final ScmConfiguration configuration;
   private final BlameVersionSelector blameVersionSelector;
   private final UrlChecker urlChecker;
-  private final FileToResource fileToResource;
-  private final PreviousSha1Finder previousSha1Finder;
   private final TimeMachine timeMachine;
+  private final FileSystem fs;
 
-  public ScmActivitySensor(ScmConfiguration configuration, BlameVersionSelector blameVersionSelector, UrlChecker urlChecker, FileToResource fileToResource,
-      PreviousSha1Finder previousSha1Finder, TimeMachine timeMachine) {
+  public ScmActivitySensor(ScmConfiguration configuration, BlameVersionSelector blameVersionSelector, UrlChecker urlChecker,
+    TimeMachine timeMachine, FileSystem fs) {
     this.configuration = configuration;
     this.blameVersionSelector = blameVersionSelector;
     this.urlChecker = urlChecker;
-    this.fileToResource = fileToResource;
-    this.previousSha1Finder = previousSha1Finder;
     this.timeMachine = timeMachine;
+    this.fs = fs;
   }
 
   @DependedUpon
   public List<Metric> generatesMetrics() {
     return ImmutableList.of(
-        ScmActivityMetrics.SCM_HASH,
-        CoreMetrics.SCM_AUTHORS_BY_LINE,
-        CoreMetrics.SCM_LAST_COMMIT_DATETIMES_BY_LINE,
-        CoreMetrics.SCM_REVISIONS_BY_LINE);
+      CoreMetrics.SCM_AUTHORS_BY_LINE,
+      CoreMetrics.SCM_LAST_COMMIT_DATETIMES_BY_LINE,
+      CoreMetrics.SCM_REVISIONS_BY_LINE);
   }
 
   public boolean shouldExecuteOnProject(Project project) {
-    return configuration.isEnabled() && project.isLatestAnalysis();
+    return configuration.isEnabled();
   }
 
-  public void analyse(Project project, final SensorContext context) {
+  public void analyse(Project module, final SensorContext context) {
     urlChecker.check(configuration.getUrl());
 
     TimeProfiler profiler = new TimeProfiler().start("Retrieve SCM blame information with encoding " + Charset.defaultCharset());
@@ -89,7 +87,7 @@ public final class ScmActivitySensor implements Sensor {
     ExecutorService executor = createExecutor();
 
     List<Future<MeasureUpdate>> updates = Lists.newArrayList();
-    collect(updates, context, allFiles(project), executor);
+    collect(updates, context, fs.inputFiles(fs.predicates().all()), executor);
     execute(updates, context);
 
     executor.shutdown();
@@ -97,18 +95,18 @@ public final class ScmActivitySensor implements Sensor {
     profiler.stop();
   }
 
-  private void collect(List<Future<MeasureUpdate>> updates, final SensorContext context, Iterable<InputFile> allFiles, ExecutorService executor) {
+  private void collect(List<Future<MeasureUpdate>> updates, final SensorContext context,
+    Iterable<InputFile> allFiles, ExecutorService executor) {
     for (final InputFile inputFile : allFiles) {
-      Resource resource = fileToResource.toResource(inputFile, context);
-
-      if (resource == null) {
-        LOG.debug("File not found in Sonar index: {}", inputFile.getFile());
+      // Load resource to get fully initialized one
+      final Resource sonarFile = context.getResource(File.create(inputFile.relativePath()));
+      if (sonarFile == null) {
+        LOG.debug("File not found in Sonar index: {}", inputFile.file());
       } else {
-        final String previousSha1 = previousSha1Finder.find(resource);
-
+        final boolean hasPreviousMeasures = hasScmMeasuresOnPreviousAnalysis(sonarFile);
         updates.add(executor.submit(new Callable<MeasureUpdate>() {
           public MeasureUpdate call() {
-            return blameVersionSelector.detect(inputFile, previousSha1, context);
+            return blameVersionSelector.detect(sonarFile, inputFile, context, hasPreviousMeasures);
           }
         }));
       }
@@ -130,11 +128,19 @@ public final class ScmActivitySensor implements Sensor {
     return Executors.newFixedThreadPool(configuration.getThreadCount());
   }
 
-  private static Iterable<InputFile> allFiles(Project project) {
-    String language = project.getLanguageKey();
-    ProjectFileSystem fileSystem = project.getFileSystem();
+  private boolean hasScmMeasuresOnPreviousAnalysis(Resource resource) {
+    List<Measure> measures = timeMachine.getMeasures(queryPreviousMeasure(resource));
+    if (measures.isEmpty()) {
+      return false;
+    }
 
-    return Iterables.concat(fileSystem.mainFiles(language), fileSystem.testFiles(language));
+    return true;
+  }
+
+  private static TimeMachineQuery queryPreviousMeasure(Resource resource) {
+    return new TimeMachineQuery(resource)
+      .setMetrics(CoreMetrics.SCM_AUTHORS_BY_LINE)
+      .setOnlyLastAnalysis(true);
   }
 
   @Override

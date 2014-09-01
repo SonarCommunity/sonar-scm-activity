@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,7 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import org.junit.Test;
@@ -38,15 +37,13 @@ public class SaveNewMeasuresTest {
     Measure authors = measure("key1");
     Measure dates = measure("key2");
     Measure revisions = measure("key3");
-    Measure sha1 = measure("key4");
 
-    SaveNewMeasures saveNewMeasures = new SaveNewMeasures(resource, authors, dates, revisions, sha1);
+    SaveNewMeasures saveNewMeasures = new SaveNewMeasures(resource, authors, dates, revisions);
     saveNewMeasures.execute(null, context);
 
     verify(context).saveMeasure(resource, authors.setPersistenceMode(PersistenceMode.DATABASE));
     verify(context).saveMeasure(resource, dates.setPersistenceMode(PersistenceMode.DATABASE));
     verify(context).saveMeasure(resource, revisions.setPersistenceMode(PersistenceMode.DATABASE));
-    verify(context).saveMeasure(resource, sha1.setPersistenceMode(PersistenceMode.DATABASE));
   }
 
   static Measure measure(String key) {

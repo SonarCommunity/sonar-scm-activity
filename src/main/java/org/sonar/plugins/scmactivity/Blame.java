@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,7 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import org.apache.maven.scm.ScmException;
@@ -27,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchExtension;
 import org.sonar.api.measures.CoreMetrics;
-import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.Metric;
 import org.sonar.api.measures.PropertiesBuilder;
 import org.sonar.api.resources.Resource;
@@ -48,7 +46,7 @@ public class Blame implements BatchExtension {
     this.scmFacade = scmFacade;
   }
 
-  public MeasureUpdate save(File file, Resource resource, String sha1, int lineCount) {
+  public MeasureUpdate save(File file, Resource resource, int lineCount) {
     BlameScmResult result = retrieveBlame(file);
     if (result == null) {
       return new CopyPreviousMeasures(resource);
@@ -73,7 +71,7 @@ public class Blame implements BatchExtension {
       }
     }
 
-    return new SaveNewMeasures(resource, authors.build(), dates.build(), revisions.build(), new Measure(ScmActivityMetrics.SCM_HASH, sha1));
+    return new SaveNewMeasures(resource, authors.build(), dates.build(), revisions.build());
   }
 
   private BlameScmResult retrieveBlame(File file) {

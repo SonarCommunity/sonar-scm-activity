@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,7 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import org.apache.maven.scm.ScmException;
@@ -52,30 +51,28 @@ public class BlameTest {
   }
 
   @Test
-  public void should_save_blame_measures_and_sha1() throws Exception {
+  public void should_save_blame_measures() throws Exception {
     when(scmFacade.blame(file(FILENAME))).thenReturn(new BlameScmResult("fake", Arrays.asList(
-        new BlameLine(new Date(13), "20", "godin"),
-        new BlameLine(new Date(10), "21", "godin"))));
+      new BlameLine(new Date(13), "20", "godin"),
+      new BlameLine(new Date(10), "21", "godin"))));
 
-    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), "SHA1", 2);
+    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), 2);
 
     assertThat(((SaveNewMeasures) update).getAuthors()).is(reflectionEqualTo(new Measure(CoreMetrics.SCM_AUTHORS_BY_LINE, "1=godin;2=godin")));
     assertThat(((SaveNewMeasures) update).getRevisions()).is(reflectionEqualTo(new Measure(CoreMetrics.SCM_REVISIONS_BY_LINE, "1=20;2=21")));
-    assertThat(((SaveNewMeasures) update).getSha1()).is(reflectionEqualTo(new Measure(ScmActivityMetrics.SCM_HASH, "SHA1")));
   }
 
   // SONARPLUGINS-3097
   @Test
   public void should_add_missing_blame_line() throws Exception {
     when(scmFacade.blame(file(FILENAME))).thenReturn(new BlameScmResult("fake", Arrays.asList(
-        new BlameLine(new Date(13), "20", "godin"),
-        new BlameLine(new Date(10), "21", "godin"))));
+      new BlameLine(new Date(13), "20", "godin"),
+      new BlameLine(new Date(10), "21", "godin"))));
 
-    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), "SHA1", 3);
+    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), 3);
 
     assertThat(((SaveNewMeasures) update).getAuthors()).is(reflectionEqualTo(new Measure(CoreMetrics.SCM_AUTHORS_BY_LINE, "1=godin;2=godin;3=godin")));
     assertThat(((SaveNewMeasures) update).getRevisions()).is(reflectionEqualTo(new Measure(CoreMetrics.SCM_REVISIONS_BY_LINE, "1=20;2=21;3=21")));
-    assertThat(((SaveNewMeasures) update).getSha1()).is(reflectionEqualTo(new Measure(ScmActivityMetrics.SCM_HASH, "SHA1")));
   }
 
   /**
@@ -86,7 +83,7 @@ public class BlameTest {
   public void should_not_throw_scm_exception() throws ScmException {
     when(scmFacade.blame(file(UNKNOWN))).thenThrow(new ScmException("ERROR"));
 
-    MeasureUpdate update = blame.save(file(UNKNOWN), resource(UNKNOWN), "SHA1", 0);
+    MeasureUpdate update = blame.save(file(UNKNOWN), resource(UNKNOWN), 0);
 
     assertThat(update).isInstanceOf(CopyPreviousMeasures.class);
   }
@@ -95,7 +92,7 @@ public class BlameTest {
   public void should_not_save_measures_if_blame_is_unsuccessful() throws ScmException {
     when(scmFacade.blame(file(UNKNOWN))).thenReturn(new BlameScmResult("", "", "", false));
 
-    MeasureUpdate update = blame.save(file(UNKNOWN), resource(UNKNOWN), "SHA1", 0);
+    MeasureUpdate update = blame.save(file(UNKNOWN), resource(UNKNOWN), 0);
 
     assertThat(update).isInstanceOf(CopyPreviousMeasures.class);
   }
@@ -103,13 +100,13 @@ public class BlameTest {
   @Test
   public void should_escape_non_ascii_char_in_author() throws Exception {
     when(scmFacade.blame(file(FILENAME))).thenReturn(new BlameScmResult("fake", Arrays.asList(
-        new BlameLine(new Date(1), "9", "Firstname Lastname"),
-        new BlameLine(new Date(2), "10", "a-valid_committer"),
-        new BlameLine(new Date(3), "11", "Frédéricö ßaôl"),
-        new BlameLine(new Date(4), "12", "çaà"),
-        new BlameLine(new Date(5), "13", "valid-user@email.com"))));
+      new BlameLine(new Date(1), "9", "Firstname Lastname"),
+      new BlameLine(new Date(2), "10", "a-valid_committer"),
+      new BlameLine(new Date(3), "11", "Frédéricö ßaôl"),
+      new BlameLine(new Date(4), "12", "çaà"),
+      new BlameLine(new Date(5), "13", "valid-user@email.com"))));
 
-    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), "SHA1", 5);
+    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), 5);
 
     assertThat(((SaveNewMeasures) update).getAuthors().getMetric()).isEqualTo(CoreMetrics.SCM_AUTHORS_BY_LINE);
     assertThat(((SaveNewMeasures) update).getAuthors().getData()).isEqualTo("1=firstname lastname;2=a-valid_committer;3=frederico _aol;4=caa;5=valid-user@email.com");
@@ -118,10 +115,10 @@ public class BlameTest {
   @Test
   public void should_lowercase_all_chars() throws Exception {
     when(scmFacade.blame(file(FILENAME))).thenReturn(new BlameScmResult("fake", Arrays.asList(
-        new BlameLine(new Date(1), "9", "aAaRegR ZePp"),
-        new BlameLine(new Date(1), "10", "aÄoÔ"))));
+      new BlameLine(new Date(1), "9", "aAaRegR ZePp"),
+      new BlameLine(new Date(1), "10", "aÄoÔ"))));
 
-    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), "SHA1", 2);
+    MeasureUpdate update = blame.save(file(FILENAME), resource(FILENAME), 2);
 
     assertThat(((SaveNewMeasures) update).getAuthors().getMetric()).isEqualTo(CoreMetrics.SCM_AUTHORS_BY_LINE);
     assertThat(((SaveNewMeasures) update).getAuthors().getData()).isEqualTo("1=aaaregr zepp;2=aaoo");

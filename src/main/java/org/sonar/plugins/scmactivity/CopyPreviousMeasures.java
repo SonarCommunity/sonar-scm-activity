@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,7 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import com.google.common.collect.ImmutableList;
@@ -34,10 +33,9 @@ import java.util.List;
 
 public class CopyPreviousMeasures implements MeasureUpdate {
   private static final List<Metric> METRICS = ImmutableList.of(
-      CoreMetrics.SCM_LAST_COMMIT_DATETIMES_BY_LINE,
-      CoreMetrics.SCM_REVISIONS_BY_LINE,
-      CoreMetrics.SCM_AUTHORS_BY_LINE,
-      ScmActivityMetrics.SCM_HASH);
+    CoreMetrics.SCM_LAST_COMMIT_DATETIMES_BY_LINE,
+    CoreMetrics.SCM_REVISIONS_BY_LINE,
+    CoreMetrics.SCM_AUTHORS_BY_LINE);
 
   private final Resource resource;
 

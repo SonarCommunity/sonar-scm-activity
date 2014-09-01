@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,18 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.batch.TimeMachine;
 
 interface MeasureUpdate {
-  MeasureUpdate NONE = new MeasureUpdate() {
-    public void execute(TimeMachine timeMachine, SensorContext context) {
-      // Do nothing
-    }
-  };
 
   void execute(TimeMachine timeMachine, SensorContext context);
 }

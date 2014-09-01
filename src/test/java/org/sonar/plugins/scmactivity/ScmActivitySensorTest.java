@@ -1,5 +1,5 @@
 /*
- * Sonar SCM Activity Plugin
+ * SonarQube SCM Activity Plugin
  * Copyright (C) 2010 SonarSource
  * dev@sonar.codehaus.org
  *
@@ -17,52 +17,63 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonar.plugins.scmactivity;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.batch.TimeMachine;
+import org.sonar.api.batch.TimeMachineQuery;
+import org.sonar.api.batch.fs.InputFile;
+import org.sonar.api.batch.fs.internal.DefaultFileSystem;
+import org.sonar.api.batch.fs.internal.DefaultInputFile;
+import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.Metric;
-import org.sonar.api.resources.InputFile;
 import org.sonar.api.resources.Project;
-import org.sonar.api.resources.ProjectFileSystem;
-import org.sonar.api.resources.Resource;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ScmActivitySensorTest {
+
+  @Rule
+  public TemporaryFolder temp = new TemporaryFolder();
+
   ScmActivitySensor scmActivitySensor;
 
   BlameVersionSelector blameVersionSelector = mock(BlameVersionSelector.class);
   ScmConfiguration conf = mock(ScmConfiguration.class);
   UrlChecker urlChecker = mock(UrlChecker.class);
-  ProjectFileSystem projectFileSystem = mock(ProjectFileSystem.class);
+  DefaultFileSystem fs = new DefaultFileSystem();
   Project project = mock(Project.class);
   SensorContext context = mock(SensorContext.class);
-  FileToResource fileToResource = mock(FileToResource.class);
-  PreviousSha1Finder previousSha1Finder = mock(PreviousSha1Finder.class);
   TimeMachine timeMachine = mock(TimeMachine.class);
-  Resource resource = mock(Resource.class);
+  org.sonar.api.resources.File file = mock(org.sonar.api.resources.File.class);
   MeasureUpdate measureUpdate = mock(MeasureUpdate.class);
+  File baseDir;
 
   @Before
-  public void setUp() {
-    scmActivitySensor = new ScmActivitySensor(conf, blameVersionSelector, urlChecker, fileToResource, previousSha1Finder, timeMachine);
+  public void before() throws IOException {
+    baseDir = temp.newFolder();
+    fs.setBaseDir(baseDir);
+    scmActivitySensor = new ScmActivitySensor(conf, blameVersionSelector, urlChecker, timeMachine, fs);
   }
 
   @Test
   public void should_execute() {
     when(conf.isEnabled()).thenReturn(true);
-    when(project.isLatestAnalysis()).thenReturn(true);
 
     boolean shouldExecute = scmActivitySensor.shouldExecuteOnProject(project);
 
@@ -72,17 +83,6 @@ public class ScmActivitySensorTest {
   @Test
   public void should_not_execute_if_disabled() {
     when(conf.isEnabled()).thenReturn(false);
-    when(project.isLatestAnalysis()).thenReturn(true);
-
-    boolean shouldExecute = scmActivitySensor.shouldExecuteOnProject(project);
-
-    assertThat(shouldExecute).isFalse();
-  }
-
-  @Test
-  public void should_not_execute_if_not_latest_analysis() {
-    when(conf.isEnabled()).thenReturn(true);
-    when(project.isLatestAnalysis()).thenReturn(false);
 
     boolean shouldExecute = scmActivitySensor.shouldExecuteOnProject(project);
 
@@ -93,14 +93,12 @@ public class ScmActivitySensorTest {
   public void should_generate_metrics() {
     List<Metric> metrics = scmActivitySensor.generatesMetrics();
 
-    assertThat(metrics).hasSize(4);
+    assertThat(metrics).hasSize(3);
   }
 
   @Test(timeout = 2000)
   public void should_check_url() {
     when(conf.getThreadCount()).thenReturn(1);
-    when(project.getLanguageKey()).thenReturn("java");
-    when(project.getFileSystem()).thenReturn(projectFileSystem);
     when(conf.getUrl()).thenReturn("scm:url");
 
     scmActivitySensor.analyse(project, context);
@@ -113,17 +111,14 @@ public class ScmActivitySensorTest {
     InputFile source = file("source.java");
     InputFile test = file("UNKNOWN.java");
     when(conf.getThreadCount()).thenReturn(1);
-    when(project.getLanguageKey()).thenReturn("java");
-    when(project.getFileSystem()).thenReturn(projectFileSystem);
-    when(projectFileSystem.mainFiles("java")).thenReturn(Arrays.asList(source));
-    when(projectFileSystem.testFiles("java")).thenReturn(Arrays.asList(test));
-    when(fileToResource.toResource(source, context)).thenReturn(resource);
-    when(previousSha1Finder.find(resource)).thenReturn("SHA1");
-    when(blameVersionSelector.detect(source, "SHA1", context)).thenReturn(measureUpdate);
-
+    fs.add(source);
+    fs.add(test);
+    when(timeMachine.getMeasures(any(TimeMachineQuery.class))).thenReturn(Arrays.asList(new Measure()));
+    when(blameVersionSelector.detect(any(org.sonar.api.resources.File.class), eq(source), eq(context), eq(true))).thenReturn(measureUpdate);
+    when(context.getResource(any(org.sonar.api.resources.File.class))).thenReturn(file).thenReturn(null);
     scmActivitySensor.analyse(project, context);
 
-    verify(measureUpdate).execute(timeMachine, context);
+    verify(measureUpdate, only()).execute(timeMachine, context);
   }
 
   @Test
@@ -131,14 +126,12 @@ public class ScmActivitySensorTest {
     InputFile first = file("source.java");
     InputFile second = file("UNKNOWN.java");
     when(conf.getThreadCount()).thenReturn(1);
-    when(project.getLanguageKey()).thenReturn("java");
-    when(project.getFileSystem()).thenReturn(projectFileSystem);
-    when(projectFileSystem.mainFiles("java")).thenReturn(Arrays.asList(first, second));
-    when(fileToResource.toResource(first, context)).thenReturn(resource);
-    when(fileToResource.toResource(second, context)).thenReturn(resource);
-    when(previousSha1Finder.find(resource)).thenReturn("SHA1");
-    when(blameVersionSelector.detect(first, "SHA1", context)).thenThrow(new RuntimeException("BUG"));
-    when(blameVersionSelector.detect(second, "SHA1", context)).thenReturn(measureUpdate);
+    fs.add(first);
+    fs.add(second);
+    when(timeMachine.getMeasures(any(TimeMachineQuery.class))).thenReturn(Arrays.asList(new Measure()));
+    when(context.getResource(any(org.sonar.api.resources.File.class))).thenReturn(file);
+    when(blameVersionSelector.detect(file, first, context, true)).thenThrow(new RuntimeException("BUG"));
+    when(blameVersionSelector.detect(file, second, context, true)).thenReturn(measureUpdate);
 
     scmActivitySensor.analyse(project, context);
 
@@ -152,9 +145,8 @@ public class ScmActivitySensorTest {
     assertThat(debugName).isEqualTo("ScmActivitySensor");
   }
 
-  static InputFile file(String name) {
-    InputFile inputFile = mock(InputFile.class);
-    when(inputFile.getFile()).thenReturn(new File(name));
-    return inputFile;
+  InputFile file(String name) {
+    return new DefaultInputFile(name)
+      .setFile(new File(baseDir, name));
   }
 }
