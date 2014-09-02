@@ -19,6 +19,9 @@
  */
 package org.sonar.plugins.scmactivity.maven.integrity;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.ScmFileSet;
 import org.apache.maven.scm.ScmResult;
@@ -30,6 +33,8 @@ import org.apache.maven.scm.provider.integrity.repository.IntegrityScmProviderRe
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
+
+import com.google.common.base.Strings;
 
 /**
  * Overriding the default blame command.<br>
@@ -91,7 +96,8 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
       int exitCode = CommandLineUtils.executeCommandLine(shell, shellConsumer, shellConsumer);
       if (exitCode != 0)
       {
-        throw new ScmException("Can't login to integrity. Message : " + shellConsumer.toString());
+				throw new ScmException(String.format("Can't login to integrity. Exite code: '%d'. Message : '%s'"
+						, exitCode, shellConsumer.getOutput()));
       }
     } catch (CommandLineException cle)
     {
@@ -107,9 +113,10 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
    * @param workingDirectory the SCM working directory.
    * @param filename the file name.
    * @return the {@link BlameScmResult} instance.
+ * @throws ScmException 
    */
   private BlameScmResult doShellAnnotate(IntegrityScmProviderRepository iRepo, ScmFileSet workingDirectory,
-    String filename)
+    String filename) throws ScmException
   {
     BlameScmResult result;
     Commandline shell = new Commandline();
@@ -119,6 +126,13 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
     shell.createArg().setValue("--hostname=" + iRepo.getHost());
     shell.createArg().setValue("--port=" + iRepo.getPort());
     shell.createArg().setValue("--user=" + iRepo.getUser());
+    shell.createArg().setValue("--batch");
+    if(!existProjectFile(workingDirectory.getBasedir())) {
+    	getLogger().debug("Project pj file doesn't exists.");
+    	final String projectUrl = buildProjectUrl(workingDirectory.getBasedir(), iRepo);
+    	getLogger().debug("Computed project url: " + projectUrl);
+    	shell.createArg().setValue("--project=" + projectUrl);
+    }
     shell.createArg().setValue("--fields=date,revision,author");
     shell.createArg().setValue('"' + filename + '"');
     IntegrityBlameConsumer shellConsumer = new IntegrityBlameConsumer(getLogger());
@@ -140,4 +154,45 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
 
     return result;
   }
+
+	/**
+	 * Build project URL.
+	 * @param basedir
+	 * @param iRepo
+	 * @return
+	 * @throws ScmException 
+	 */
+	private String buildProjectUrl(File basedir, IntegrityScmProviderRepository iRepo) throws ScmException {
+		final String projectConfigPath = Strings.nullToEmpty(iRepo.getConfigruationPath());
+		String userDir = Strings.nullToEmpty(System.getProperty("user.dir"));
+		String projectUrl = "";
+		try {
+			String baseDirStr = basedir.getCanonicalPath();
+			getLogger().debug(
+					String.format("The project config path '%s', current scm base dir '%s' and user dir '%s'.",
+							projectConfigPath, baseDirStr, userDir));
+			userDir = userDir.replaceAll("\\\\", "/");
+			baseDirStr = baseDirStr.replaceAll("\\\\", "/");
+			String relativDir = baseDirStr.replace(userDir, "");
+			getLogger().debug("The project relativ dir: " + relativDir);
+			projectUrl = projectConfigPath + relativDir;
+			
+		} catch (IOException e) {
+			getLogger().error("Cannot get cannoical path for basedir.", e);
+			throw new ScmException("Cannot get cannoical path for basedir: " + e.getMessage());
+		}
+		
+		return projectUrl;
+	}
+	
+	/**
+	 * Check if exists "project.pj" file in provide directory.
+	 * @param basedir the directory.
+	 * @return <code>true</code> if "project.pj" exists, otherwise <code>false</code>.
+	 */
+	private boolean existProjectFile(File basedir) {
+		final File projectPj = new File(basedir, "project.pj");
+		return projectPj.exists();
+	}
+	
 }
