@@ -39,6 +39,8 @@ public class SonarTfsBlameCommand extends TfsBlameCommand {
     cl.setWorkingDirectory(workingDirectory.getBasedir());
     cl.setExecutable(EXECUTABLE);
     cl.createArg().setValue(filename);
+    cl.createArg().setValue(repo.getUser());
+    cl.createArg().setValue(repo.getPassword());
 
     TfsBlameConsumer consumer = new TfsBlameConsumer(getLogger());
     CommandLineUtils.StringStreamConsumer stderr = new CommandLineUtils.StringStreamConsumer();
