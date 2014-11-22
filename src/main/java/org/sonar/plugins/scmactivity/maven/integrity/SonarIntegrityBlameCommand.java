@@ -22,6 +22,7 @@ package org.sonar.plugins.scmactivity.maven.integrity;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.ScmFileSet;
 import org.apache.maven.scm.ScmResult;
@@ -46,6 +47,9 @@ import com.google.common.base.Strings;
  * @since 1.6.1
  */
 public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
+  
+  private static final String SYS_INTEGRITY_ROOT_DIR = "sonar.scm.integrity.root.dir";
+  private static final String SYS_JENKINS_WORKSPACE_DIR = "WORKSPACE"; 
 
   /**
    * {@inheritDoc}
@@ -92,7 +96,7 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
 
     try
     {
-      getLogger().debug("Executing: " + CommandLineUtils.toString(shell.getCommandline()));
+      getLogger().debug("Executing: " + shadowPasswordArgument(CommandLineUtils.toString(shell.getCommandline())));
       int exitCode = CommandLineUtils.executeCommandLine(shell, shellConsumer, shellConsumer);
       if (exitCode != 0)
       {
@@ -107,13 +111,17 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
 
   }
 
+  private String shadowPasswordArgument(String commandline) {
+    return commandline.replaceAll("--password=.*($|\\s)", "--password=********* ");
+  }
+
   /**
    * Execute 'si annotate' command in current shell and process output as {@link BlameScmResult} instance.
    * @param iRepo the Integrity repository instance.
    * @param workingDirectory the SCM working directory.
    * @param filename the file name.
    * @return the {@link BlameScmResult} instance.
- * @throws ScmException 
+   * @throws ScmException 
    */
   private BlameScmResult doShellAnnotate(IntegrityScmProviderRepository iRepo, ScmFileSet workingDirectory,
     String filename) throws ScmException
@@ -163,26 +171,63 @@ public class SonarIntegrityBlameCommand extends IntegrityBlameCommand {
 	 * @throws ScmException 
 	 */
 	private String buildProjectUrl(File basedir, IntegrityScmProviderRepository iRepo) throws ScmException {
-		final String projectConfigPath = Strings.nullToEmpty(iRepo.getConfigruationPath());
-		String userDir = Strings.nullToEmpty(System.getProperty("user.dir"));
+		String projectConfigPath = Strings.nullToEmpty(iRepo.getConfigruationPath());
+		projectConfigPath = StringUtils.removeEnd(projectConfigPath, "/");
 		String projectUrl = "";
 		try {
+			String integrityRootDir = getIntegrityRootDirectory();
 			String baseDirStr = basedir.getCanonicalPath();
-			getLogger().debug(
-					String.format("The project config path '%s', current scm base dir '%s' and user dir '%s'.",
-							projectConfigPath, baseDirStr, userDir));
-			userDir = userDir.replaceAll("\\\\", "/");
+			getLogger()
+					.debug(String
+							.format("The project config path '%s', current scm base dir '%s' and Integrity root directory '%s'.",
+									projectConfigPath, baseDirStr, integrityRootDir));
+			integrityRootDir = integrityRootDir.replaceAll("\\\\", "/");
 			baseDirStr = baseDirStr.replaceAll("\\\\", "/");
-			String relativDir = baseDirStr.replace(userDir, "");
+			if (!StringUtils.startsWithIgnoreCase(baseDirStr, integrityRootDir)) {
+				throw new ScmException(String.format("The Integrity root directory '%s' isn't correctly identified.",
+						integrityRootDir));
+			}
+			String relativDir = baseDirStr.substring(integrityRootDir.length());
+			relativDir = StringUtils.startsWith(relativDir, "/") ? relativDir : "/" + relativDir;
 			getLogger().debug("The project relativ dir: " + relativDir);
 			projectUrl = projectConfigPath + relativDir;
-			
 		} catch (IOException e) {
-			getLogger().error("Cannot get cannoical path for basedir.", e);
+			getLogger().error("Cannot get cannoical path for base directory.", e);
 			throw new ScmException("Cannot get cannoical path for basedir: " + e.getMessage());
 		}
-		
+
 		return projectUrl;
+	}
+
+	/**
+	 * @return The resolved directory path of system variable '{@value #SYS_INTEGRITY_ROOT_DIR}', system variable value
+	 *         '{@value #SYS_JENKINS_WORKSPACE_DIR}' or current working directory.
+	 * @throws ScmException
+	 */
+	private String getIntegrityRootDirectory() throws ScmException {
+		try {
+			final String integrityRootDir;
+			final String sysIntegrityRootDir = System.getenv(SYS_INTEGRITY_ROOT_DIR);
+			final String sysJenkinsWorksapceDir = System.getenv(SYS_JENKINS_WORKSPACE_DIR);
+			if (sysIntegrityRootDir != null) {
+				getLogger().debug(
+						String.format("The system integrity root directory property provided value is: '%s'",
+								sysIntegrityRootDir));
+				integrityRootDir = new File(sysIntegrityRootDir).getCanonicalPath();
+			} else if (sysJenkinsWorksapceDir != null) {
+				getLogger().debug(
+						String.format("The Jenkins worksapce directory property provided value is: '%s'",
+								sysJenkinsWorksapceDir));
+				integrityRootDir = sysJenkinsWorksapceDir;
+			} else {
+				getLogger().debug("The system integrity root directory not property provided.");
+				integrityRootDir = Strings.nullToEmpty(System.getProperty("user.dir"));
+			}
+			return integrityRootDir;
+		} catch (IOException e) {
+			getLogger().error("Cannot get cannoical path for integrity root directory.", e);
+			throw new ScmException("Cannot get cannoical path for integrity root directory: " + e.getMessage());
+		}
 	}
 	
 	/**
