@@ -41,6 +41,7 @@ public class BlameVersionSelectorTest {
 
   BlameVersionSelector blameVersionSelector;
 
+  ScmConfiguration conf = mock(ScmConfiguration.class);
   Blame blameSensor = mock(Blame.class);
   SensorContext context = mock(SensorContext.class);
   org.sonar.api.resources.File resource = mock(org.sonar.api.resources.File.class);
@@ -48,7 +49,8 @@ public class BlameVersionSelectorTest {
 
   @Before
   public void setUp() {
-    blameVersionSelector = new BlameVersionSelector(blameSensor);
+    blameVersionSelector = new BlameVersionSelector(conf, blameSensor);
+    when(conf.isReloadBlameEnabled()).thenReturn(false);
   }
 
   @Test
@@ -76,6 +78,21 @@ public class BlameVersionSelectorTest {
     MeasureUpdate update = blameVersionSelector.detect(resource, inputFile, context, false);
 
     assertThat(update).isSameAs(saveBlame);
+  }
+  
+  @Test
+  public void should_save_blame_when_file_is_the_same_and_reloadEnabled() throws IOException {
+      File file = file("source.java", "foo");
+      DefaultInputFile inputFile = new DefaultInputFile("source.java").setFile(file);
+      inputFile.setStatus(InputFile.Status.SAME);
+      inputFile.setLines(1);
+      when(blameSensor.save(file, resource, 1)).thenReturn(saveBlame);
+
+      when(conf.isReloadBlameEnabled()).thenReturn(true);
+
+      MeasureUpdate update = blameVersionSelector.detect(resource, inputFile, context, true);
+      
+      assertThat(update).isSameAs(saveBlame);
   }
 
   @Test

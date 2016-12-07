@@ -31,16 +31,18 @@ import java.io.File;
 public class BlameVersionSelector implements BatchExtension {
   private static final Logger LOG = LoggerFactory.getLogger(BlameVersionSelector.class);
 
+  private final ScmConfiguration configuration;
   private final Blame blame;
 
-  public BlameVersionSelector(Blame blame) {
+  public BlameVersionSelector(ScmConfiguration configuration, Blame blame) {
+    this.configuration = configuration;
     this.blame = blame;
   }
 
   public MeasureUpdate detect(Resource sonarFile, InputFile inputFile, SensorContext context, boolean hasPreviousMeasures) {
     File file = inputFile.file();
 
-    if (inputFile.status() == InputFile.Status.SAME && hasPreviousMeasures) {
+    if (inputFile.status() == InputFile.Status.SAME && hasPreviousMeasures && !configuration.isReloadBlameEnabled()) {
       return fileNotChanged(file, sonarFile);
     }
 

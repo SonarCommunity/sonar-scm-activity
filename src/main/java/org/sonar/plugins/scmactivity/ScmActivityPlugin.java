@@ -95,6 +95,7 @@ public final class ScmActivityPlugin extends SonarPlugin {
   public static final String PASSWORD = "sonar.scm.password.secured";
   public static final String THREAD_COUNT = "sonar.scm.threadCount";
   public static final String PERFORCE_CLIENTSPEC_NAME = "sonar.scm.perforce.clientspec.name";
+  public static final String RELOAD_BLAME = "sonar.scm.reloadBlame";
 
   @SuppressWarnings("unchecked")
   public List getExtensions() {
