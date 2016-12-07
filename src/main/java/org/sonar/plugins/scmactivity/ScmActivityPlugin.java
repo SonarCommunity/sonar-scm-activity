@@ -87,6 +87,15 @@ import java.util.List;
     module = false,
     project = false,
     global = false
+  ),
+  @Property(
+    key = ScmActivityPlugin.SVN_BLAME_OPTIONS,
+    defaultValue = "--extensions --ignore-all-space",
+    name = "Svn blame command line options",
+    description = "Extra command line options for the svn blame command (like --ignore-all-space, --ignore-eol-style)",
+    module = false,
+    project = false,
+    global = false
   )})
 public final class ScmActivityPlugin extends SonarPlugin {
   public static final String ENABLED = "sonar.scm.enabled";
@@ -95,6 +104,7 @@ public final class ScmActivityPlugin extends SonarPlugin {
   public static final String PASSWORD = "sonar.scm.password.secured";
   public static final String THREAD_COUNT = "sonar.scm.threadCount";
   public static final String PERFORCE_CLIENTSPEC_NAME = "sonar.scm.perforce.clientspec.name";
+  public static final String SVN_BLAME_OPTIONS = "sonar.scm.svn.options";
 
   @SuppressWarnings("unchecked")
   public List getExtensions() {

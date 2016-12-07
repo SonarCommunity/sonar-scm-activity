@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blame>
+<target
+   path="AbstractBMController.java">
+<entry
+   line-number="63">
+<commit
+   revision="38858">
+<author>vpiyanov</author>
+<date>2013-08-15T17:15:55.965390Z</date>
+</commit>
+<merged
+   path="/branches/lis/development/web-recorder-workspace/src/main/java/ru/lanit/emias/controller/lis/bm/AbstractBMController.java">
+<commit
+   revision="36000">
+<author>s.zamyslov</author>
+<date>2013-06-24T06:52:39.120689Z</date>
+</commit>
+</merged>
+</entry>
+
+<entry
+   line-number="86">
+<commit
+   revision="41615">
+<author>a.marin</author>
+<date>2013-10-09T11:55:04.808948Z</date>
+</commit>
+<merged
+   path="/trunk/development/web-recorder-workspace/src/main/java/ru/lanit/emias/controller/lis/bm/AbstractBMController.java">
+<commit
+   revision="41615">
+<author>a.marin</author>
+<date>2013-10-09T11:55:04.808948Z</date>
+</commit>
+</merged>
+</entry>
+
+<entry
+   line-number="138">
+<commit
+   revision="23048">
+<author>ybaryshnikova</author>
+<date>2012-11-06T07:29:55.261366Z</date>
+</commit>
+<merged
+   path="/branches/1_2/development/web-recorder-workspace/src/main/java/ru/lanit/emias/controller/bm/AbstractBMController.java">
+<commit
+   revision="23048">
+<author>ybaryshnikova</author>
+<date>2012-11-06T07:29:55.261366Z</date>
+</commit>
+</merged>
+</entry>
+</target>
+</blame>

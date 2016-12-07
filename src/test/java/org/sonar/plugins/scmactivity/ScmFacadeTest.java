@@ -149,4 +149,17 @@ public class ScmFacadeTest {
 
     assertThat(System.getProperty("maven.scm.perforce.clientspec.name")).isEqualTo("myclientspec");
   }
+  
+  @Test
+  public void should_set_svn_options_property() throws ScmException {
+      when(conf.getUrl()).thenReturn("/url");
+      when(conf.getScmProvider()).thenReturn("svn");
+      when(conf.getSvnBlameOptions()).thenReturn("some svn blame options");
+      
+      when(manager.blame(any(BlameScmRequest.class))).thenReturn(blameScmResult);
+      
+      scmFacade.blame(new File("src/source.java"));
+      
+      assertThat(System.getProperty("maven.scm.svn.options")).isEqualTo("some svn blame options");
+  }
 }

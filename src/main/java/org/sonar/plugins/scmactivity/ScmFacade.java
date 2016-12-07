@@ -55,6 +55,12 @@ public class ScmFacade implements BatchExtension {
         System.setProperty("maven.scm.perforce.clientspec.name", perforceClientSpecName);
       }
     }
+    if ("svn".equals(configuration.getScmProvider())) {
+        String svnBlameOptions = configuration.getSvnBlameOptions();
+        if (StringUtils.isNotBlank(svnBlameOptions)) {
+            System.setProperty("maven.scm.svn.options", svnBlameOptions);
+        }
+    }
     BlameScmRequest blameRequest = new BlameScmRequest(getScmRepository(), new ScmFileSet(file.getParentFile()));
     blameRequest.setFilename(file.getName());
     // FIXME setIgnoreWhitespace is not taken into account see http://jira.codehaus.org/browse/SCM-681#comment-323446

@@ -91,6 +91,15 @@ public class ScmConfiguration implements BatchExtension {
     }
     return clientspecName;
   }
+  
+  @CheckForNull
+  public String getSvnBlameOptions() {
+      String svnOptions = settings.getString(ScmActivityPlugin.SVN_BLAME_OPTIONS);
+      if (StringUtils.isBlank(svnOptions)) {
+          return null;
+      }
+      return svnOptions;
+  }
 
   public String getUrl() {
     return url.get();

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blame>
+<target
+   path="AbstractBMController.java">
+<entry
+   line-number="63">
+<commit
+   revision="38858">
+<author>vpiyanov</author>
+<date>2013-08-15T17:15:55.965390Z</date>
+</commit>
+
+</entry>
+
+<entry
+   line-number="86">
+<commit
+   revision="41615">
+<author>a.marin</author>
+<date>2013-10-09T11:55:04.808948Z</date>
+</commit>
+
+</entry>
+
+<entry
+   line-number="138">
+<commit
+   revision="23048">
+<author>ybaryshnikova</author>
+<date>2012-11-06T07:29:55.261366Z</date>
+</commit>
+
+</entry>
+</target>
+</blame>
