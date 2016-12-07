@@ -96,6 +96,9 @@ public class Blame implements BatchExtension {
   }
 
   private String normalizeString(String inputString) {
+    if (inputString == null) {
+      return "";
+    }
     String lowerCasedString = inputString.toLowerCase();
     String stringWithoutAccents = removeAccents(lowerCasedString);
     return removeNonAsciiCharacters(stringWithoutAccents);
