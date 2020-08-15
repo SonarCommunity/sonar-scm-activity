@@ -76,7 +76,7 @@
   </ciManagement>
 
   <properties>
-    <version.maven-scm>1.8</version.maven-scm>
+    <version.maven-scm>1.11.2</version.maven-scm>
     <sonar.buildVersion>4.2</sonar.buildVersion>
     <sonar.pluginName>SCM Activity</sonar.pluginName>
     <sonar.pluginClass>org.sonar.plugins.scmactivity.ScmActivityPlugin</sonar.pluginClass>
